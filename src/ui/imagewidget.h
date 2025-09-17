@@ -5,6 +5,7 @@
 #include <QImage>
 #include <QPoint>
 #include <QUndoStack>
+#include <QColor>
 
 class ImageDocument;
 
@@ -27,6 +28,11 @@ public:
     void setTool(ToolType tool);
     void setBrushSize(int px);
     void setBrushOpacity(int percent);
+    void setBrushColor(const QColor &c) { m_brushColor = c; }
+    void setEraserSize(int px) { m_eraserSize = qMax(1, px); }
+
+    // Returns merged image: base (from document) + overlay
+    QImage compositedImage() const;
 
     void fitToWidget();
     double scaleFactor() const { return m_scale; }
@@ -66,8 +72,10 @@ private:
 
     ToolType m_tool;
     int m_brushSize;
+    int m_eraserSize { 10 };
     int m_brushOpacity;    // 0..100
     bool m_drawing;
+    QColor m_brushColor { Qt::black };
 };
 
 #endif // UI_IMAGEWIDGET_H

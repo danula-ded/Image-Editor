@@ -12,6 +12,11 @@
 #include <QToolButton>
 #include <QIcon>
 #include <QLabel>
+#include <QSlider>
+#include <QColorDialog>
+#include <QActionGroup>
+#include <QInputDialog>
+#include <QApplication>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -33,6 +38,7 @@ void MainWindow::setupUi()
     QToolBar *tb = addToolBar("Toolbar");
     tb->setMovable(false);
     tb->setIconSize(QSize(20, 20));
+    tb->setStyleSheet("QToolBar { background: #3c3c3c; border: 0; } QToolButton { padding: 4px; } ");
 
     m_openAct = new QAction(QIcon(":/icons/open.svg"), tr("Открыть"), this);
     m_openAct->setToolTip(tr("Открыть файл изображения"));
@@ -71,7 +77,41 @@ void MainWindow::setupUi()
     connect(m_textAct, &QAction::triggered, this, [this]{ m_view->setTool(ToolType::Text); m_brushAct->setChecked(false); m_eraserAct->setChecked(false); });
     tb->addAction(m_textAct);
 
+    // Brush size slider
+    tb->addSeparator();
+    QLabel *brushLbl = new QLabel(tr("Толщина:"), tb);
+    brushLbl->setStyleSheet("QLabel { color: #ddd; } ");
+    tb->addWidget(brushLbl);
+    m_brushSizeSlider = new QSlider(Qt::Horizontal, tb);
+    m_brushSizeSlider->setRange(1, 50);
+    m_brushSizeSlider->setValue(10);
+    m_brushSizeSlider->setFixedWidth(120);
+    tb->addWidget(m_brushSizeSlider);
+    connect(m_brushSizeSlider, &QSlider::valueChanged, this, [this](int v){ m_view->setBrushSize(v); });
+
+    // Quick color actions
+    tb->addSeparator();
+    m_colorBlack = tb->addAction(QIcon(), tr("Черный"));
+    m_colorBlack->setToolTip(tr("Цвет: черный"));
+    connect(m_colorBlack, &QAction::triggered, this, [this]{ m_view->setBrushColor(Qt::black); });
+    m_colorRed = tb->addAction(QIcon(), tr("Красный"));
+    m_colorRed->setToolTip(tr("Цвет: красный"));
+    connect(m_colorRed, &QAction::triggered, this, [this]{ m_view->setBrushColor(Qt::red); });
+    m_colorBlue = tb->addAction(QIcon(), tr("Синий"));
+    m_colorBlue->setToolTip(tr("Цвет: синий"));
+    connect(m_colorBlue, &QAction::triggered, this, [this]{ m_view->setBrushColor(Qt::blue); });
+
+    // Color picker (settings)
+    m_colorPicker = new QAction(QIcon(":/icons/contrast.svg"), tr("Выбрать цвет"), this);
+    m_colorPicker->setToolTip(tr("Выбрать произвольный цвет"));
+    connect(m_colorPicker, &QAction::triggered, this, [this]{
+        QColor c = QColorDialog::getColor(Qt::black, this, tr("Выбор цвета"));
+        if (c.isValid()) m_view->setBrushColor(c);
+    });
+    tb->addAction(m_colorPicker);
+
     // Status bar
+    statusBar()->setStyleSheet("QStatusBar { background: #3c3c3c; color: #ddd; } ");
     statusBar()->showMessage(tr("Готово"));
 
     // Connections for view state
@@ -100,6 +140,19 @@ void MainWindow::setupMenus()
     m_resizeAct = editMenu->addAction("Изменить размер...", this, &MainWindow::doResize);
     m_cropAct = editMenu->addAction("Обрезать...", this, &MainWindow::doCrop);
     m_brightnessContrastAct = editMenu->addAction("Яркость/Контраст...", this, &MainWindow::adjustBrightnessContrast);
+
+    auto *viewMenu = menuBar()->addMenu("Вид");
+    auto *themeMenu = viewMenu->addMenu("Тема");
+    QAction *lightAct = themeMenu->addAction("Светлая");
+    QAction *darkAct = themeMenu->addAction("Тёмная");
+    QActionGroup *themeGroup = new QActionGroup(this);
+    lightAct->setCheckable(true);
+    darkAct->setCheckable(true);
+    lightAct->setChecked(true);
+    themeGroup->addAction(lightAct);
+    themeGroup->addAction(darkAct);
+    connect(lightAct, &QAction::triggered, this, &MainWindow::applyLightTheme);
+    connect(darkAct, &QAction::triggered, this, &MainWindow::applyDarkTheme);
 }
 
 void MainWindow::updateView()
@@ -130,10 +183,12 @@ void MainWindow::saveImage()
     const QString file = QFileDialog::getSaveFileName(this, "Сохранить изображение", QString(),
                                                       "PNG (*.png);;JPEG (*.jpg);;BMP (*.bmp)");
     if (file.isEmpty()) return;
-    if (!m_doc.saveToFile(file)) {
-        QMessageBox::warning(this, "Ошибка", "Не удалось сохранить изображение");
-    } else {
+    // Compose base + overlay and save
+    QImage finalImg = m_view->compositedImage();
+    if (!finalImg.isNull() && finalImg.save(file)) {
         statusBar()->showMessage(tr("Сохранено"));
+    } else {
+        QMessageBox::warning(this, "Ошибка", "Не удалось сохранить изображение");
     }
 }
 
@@ -204,6 +259,40 @@ void MainWindow::updateStatus()
     statusBar()->showMessage(tr("%1    %2x%3    %4%")
                              .arg(name.isEmpty() ? tr("(без имени)") : name)
                              .arg(s.width()).arg(s.height()).arg(pct));
+}
+
+void MainWindow::applyLightTheme()
+{
+    qApp->setPalette(QPalette());
+    qApp->setStyleSheet("");
+    // Optional: adjust toolbar/statusbar back to light
+    foreach (QObject *obj, children()) {
+        if (auto tb = qobject_cast<QToolBar*>(obj)) tb->setStyleSheet("");
+    }
+    statusBar()->setStyleSheet("");
+}
+
+void MainWindow::applyDarkTheme()
+{
+    QPalette dark;
+    dark.setColor(QPalette::Window, QColor(53,53,53));
+    dark.setColor(QPalette::WindowText, Qt::white);
+    dark.setColor(QPalette::Base, QColor(42,42,42));
+    dark.setColor(QPalette::AlternateBase, QColor(66,66,66));
+    dark.setColor(QPalette::ToolTipBase, Qt::white);
+    dark.setColor(QPalette::ToolTipText, Qt::white);
+    dark.setColor(QPalette::Text, Qt::white);
+    dark.setColor(QPalette::Button, QColor(53,53,53));
+    dark.setColor(QPalette::ButtonText, Qt::white);
+    dark.setColor(QPalette::BrightText, Qt::red);
+    dark.setColor(QPalette::Highlight, QColor(142,45,197).lighter());
+    dark.setColor(QPalette::HighlightedText, Qt::black);
+    qApp->setPalette(dark);
+    // Style for toolbar/statusbar to match
+    foreach (QObject *obj, children()) {
+        if (auto tb = qobject_cast<QToolBar*>(obj)) tb->setStyleSheet("QToolBar { background: #3c3c3c; border: 0; } QToolButton { padding: 4px; }");
+    }
+    statusBar()->setStyleSheet("QStatusBar { background: #3c3c3c; color: #ddd; }");
 }
 
 

@@ -8,6 +8,8 @@
 #include <QMimeData>
 #include <QFileInfo>
 #include <QFileDialog>
+#include <QInputDialog>
+#include <QLineEdit>
 
 ImageWidget::ImageWidget(QWidget *parent)
     : QWidget(parent)
@@ -113,6 +115,31 @@ void ImageWidget::mousePressEvent(QMouseEvent *e)
         m_drawing = true;
         m_lastPos = e->pos();
     }
+    // Text tool: prompt for text and paint on overlay at clicked position
+    if (e->button() == Qt::LeftButton && m_tool == ToolType::Text) {
+        bool ok = false;
+        QString text = QInputDialog::getText(this,
+                                             tr("Добавить текст"),
+                                             tr("Введите текст:"),
+                                             QLineEdit::Normal,
+                                             QString(), &ok);
+        if (ok && !text.isEmpty()) {
+            // Ensure overlay exists
+            if (m_overlay.isNull() && m_doc && !m_doc->isEmpty()) {
+                m_overlay = QImage(m_doc->image().size(), QImage::Format_ARGB32_Premultiplied);
+                m_overlay.fill(Qt::transparent);
+            }
+            // Map click to image coordinates and draw text on overlay
+            QPointF imgPt = widgetToImage(e->pos());
+            if (imgPt.x() >= 0 && imgPt.y() >= 0) {
+                QPainter painter(&m_overlay);
+                painter.setRenderHint(QPainter::Antialiasing, true);
+                painter.setPen(QPen(m_brushColor, m_brushSize));
+                painter.drawText(imgPt, text);
+                update();
+            }
+        }
+    }
 }
 
 void ImageWidget::mouseMoveEvent(QMouseEvent *e)
@@ -128,10 +155,10 @@ void ImageWidget::mouseMoveEvent(QMouseEvent *e)
         if (m_overlay.isNull()) return;
         QPainter p(&m_overlay);
         p.setRenderHint(QPainter::Antialiasing, true);
-        QColor col = (m_tool == ToolType::Brush) ? QColor(0,0,0, m_brushOpacity * 255 / 100) : QColor(0,0,0,0);
+        QColor col = (m_tool == ToolType::Brush) ? QColor(m_brushColor.red(), m_brushColor.green(), m_brushColor.blue(), m_brushOpacity * 255 / 100) : QColor(0,0,0,0);
         if (m_tool == ToolType::Eraser) {
             p.setCompositionMode(QPainter::CompositionMode_Clear);
-            p.setPen(QPen(Qt::transparent, m_brushSize, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            p.setPen(QPen(Qt::transparent, m_eraserSize, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         } else {
             p.setPen(QPen(col, m_brushSize, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         }
@@ -142,6 +169,18 @@ void ImageWidget::mouseMoveEvent(QMouseEvent *e)
         m_lastPos = e->pos();
         update();
     }
+}
+
+QImage ImageWidget::compositedImage() const
+{
+    if (!m_doc || m_doc->isEmpty()) return QImage();
+    QImage result = m_doc->image().convertToFormat(QImage::Format_ARGB32);
+    if (!m_overlay.isNull()) {
+        QPainter p(&result);
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        p.drawImage(QPoint(0,0), m_overlay);
+    }
+    return result;
 }
 
 void ImageWidget::mouseReleaseEvent(QMouseEvent *e)

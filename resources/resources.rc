@@ -1,4 +1,6 @@
 #include <windows.h>
 
-IDI_APP_ICON ICON "app_icon.ico"
+// Provide both a named and numeric icon resource so Windows picks it as the main app icon
+IDI_ICON1 ICON "app_icon.ico"
+1 ICON "app_icon.ico"
 

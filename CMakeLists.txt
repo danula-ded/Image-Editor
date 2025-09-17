@@ -27,12 +27,12 @@ set(IMAGEEDITOR_SOURCES
     resources/icons.qrc
 )
 
-set(APP_WIN_RC)
-if (WIN32 AND EXISTS "${CMAKE_SOURCE_DIR}/resources/resources.rc" AND EXISTS "${CMAKE_SOURCE_DIR}/resources/app_icon.ico")
-    set(APP_WIN_RC resources/resources.rc)
+# Always include Windows resource if building on WIN32
+if (WIN32)
+    list(APPEND IMAGEEDITOR_SOURCES resources/resources.rc)
 endif()
 
-add_executable(ImageEditor WIN32 ${IMAGEEDITOR_SOURCES} ${APP_WIN_RC})
+add_executable(ImageEditor WIN32 ${IMAGEEDITOR_SOURCES})
 
 # Link libraries
 target_link_libraries(ImageEditor PRIVATE

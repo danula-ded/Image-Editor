@@ -10,6 +10,8 @@
 #include <QToolButton>
 #include <QStatusBar>
 #include <QUndoStack>
+#include <QSlider>
+#include <QActionGroup>
 #include "imagewidget.h"
 #include "../core/ImageDocument.h"
 
@@ -33,6 +35,8 @@ private slots:
 private:
     void setupUi();
     void setupMenus();
+    void applyLightTheme();
+    void applyDarkTheme();
     void updateView();
     void updateStatus();
 
@@ -54,6 +58,14 @@ private:
     QAction *m_brightnessContrastAct;
 
     double m_cachedScale = 1.0;
+
+    // UI controls on toolbar
+    QSlider *m_brushSizeSlider { nullptr };
+    QSlider *m_eraserSizeSlider { nullptr };
+    QAction *m_colorBlack { nullptr };
+    QAction *m_colorRed { nullptr };
+    QAction *m_colorBlue { nullptr };
+    QAction *m_colorPicker { nullptr };
 };
 
 #endif // UI_MAINWINDOW_H
