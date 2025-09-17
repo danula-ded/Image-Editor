@@ -7,6 +7,10 @@
 #include <QMenu>
 #include <QToolBar>
 #include <QScrollArea>
+#include <QToolButton>
+#include <QStatusBar>
+#include <QUndoStack>
+#include "imagewidget.h"
 #include "../core/ImageDocument.h"
 
 class MainWindow : public QMainWindow
@@ -30,19 +34,26 @@ private:
     void setupUi();
     void setupMenus();
     void updateView();
+    void updateStatus();
 
     ImageDocument m_doc;
-    QLabel *m_imageLabel;
-    QScrollArea *m_scroll;
+    ImageWidget *m_view;
+    QUndoStack m_undo;
 
     QAction *m_openAct;
     QAction *m_saveAct;
+    QAction *m_resetViewAct;
+    QAction *m_brushAct;
+    QAction *m_eraserAct;
+    QAction *m_textAct;
     QAction *m_rotateCWAct;
     QAction *m_rotateCCWAct;
     QAction *m_rotate180Act;
     QAction *m_resizeAct;
     QAction *m_cropAct;
     QAction *m_brightnessContrastAct;
+
+    double m_cachedScale = 1.0;
 };
 
 #endif // UI_MAINWINDOW_H

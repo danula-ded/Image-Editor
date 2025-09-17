@@ -9,6 +9,7 @@ bool ImageDocument::loadFromFile(const QString &filePath)
     QImage img;
     if (!img.load(filePath)) return false;
     m_image = img.convertToFormat(QImage::Format_ARGB32);
+    m_path = filePath;
     return true;
 }
 
@@ -42,6 +43,12 @@ void ImageDocument::rotate180()
     if (m_image.isNull()) return;
     QTransform t; t.rotate(180);
     m_image = m_image.transformed(t, Qt::SmoothTransformation);
+}
+
+void ImageDocument::flipHorizontal()
+{
+    if (m_image.isNull()) return;
+    m_image = m_image.mirrored(true, false);
 }
 
 void ImageDocument::resizeTo(int width, int height, Qt::TransformationMode mode)

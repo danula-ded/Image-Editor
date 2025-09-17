@@ -1,6 +1,6 @@
-# Редактор изображений
+# ImageEditor (Qt 5.15.2, MinGW)
 
-Профессиональное приложение для редактирования изображений, созданное с использованием C++, Qt 6 и OpenCV.
+Простой фоторедактор на Qt 5.15.2 (Widgets/Gui/Core) без OpenCV. Поддерживает открытие/сохранение, повороты, отражение, обрезку, кисть/ластик, добавление текста, яркость/контраст, масштабирование и перетаскивание.
 
 ## Возможности
 
@@ -16,72 +16,36 @@
 
 ## Требования
 
-- CMake 3.16 или выше
-- Qt 6 (Core, Widgets)
-- OpenCV 4.x
-- Компилятор с поддержкой C++17
-
-## Установка зависимостей
-
-### Windows (vcpkg)
-```bash
-vcpkg install qt6-base qt6-widgets opencv4
-```
-
-### Ubuntu/Debian
-```bash
-sudo apt-get install cmake qt6-base-dev libopencv-dev
-```
-
-### macOS (Homebrew)
-```bash
-brew install cmake qt6 opencv
-```
+- Qt 5.15.2 MinGW: `C:/Qt/5.15.2/mingw81_64`
+- CMake 3.16+
+- MinGW Makefiles
 
 ## Сборка
 
-1. Клонируйте репозиторий или скачайте исходный код
-2. Создайте директорию для сборки:
-```bash
-mkdir build
-cd build
-```
-
-3. Настройте CMake с vcpkg:
-```bash
-cmake .. -DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
-```
-
-4. Соберите проект:
-```bash
-cmake --build .
+Откройте Qt MinGW Command Prompt и выполните:
+```bat
+rmdir /s /q build
+mkdir build && cd build
+cmake .. -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH="C:/Qt/5.15.2/mingw81_64/lib/cmake"
+mingw32-make
 ```
 
 ## Запуск
 
-После успешной сборки запустите приложение одним из способов:
-
-### Способ 1: Через bat-файл (рекомендуется)
-```bash
-cd build/Debug
-run_photoeditor.bat
+Exe будет в `build/bin/ImageEditor.exe`. Если `windeployqt` не сработал автоматически, выполните:
+```bat
+cd build/bin
+C:/Qt/5.15.2/mingw81_64/bin/windeployqt.exe --no-translations --no-compiler-runtime ImageEditor.exe
+./ImageEditor.exe
 ```
 
-### Способ 2: Прямой запуск
-```bash
-cd build/Debug
-.\PhotoEditor.exe
-```
+Для распространения сделайте ZIP всей папки `build/bin` (exe + DLL + плагины Qt).
 
-### Способ 3: Полное развертывание (если есть проблемы)
-```bash
-cd build/Debug
-deploy_complete.bat
-run_photoeditor.bat
-```
+## UI
 
-### Способ 4: Через Visual Studio
-Запустите проект в Visual Studio - переменная окружения настроена автоматически.
+- Левый тулбар с инструментами: Open, Save As, Undo, Redo, Rotate 90, Flip Horizontal, Crop, Brush, Eraser, Text, Brightness/Contrast, Zoom In/Out, Reset View, Settings
+- Верхние меню: File, Edit, View
+- Правый блок: ползунки Brightness/Contrast (реалтайм превью) + Apply
 
 ## Использование
 
@@ -109,8 +73,6 @@ Image-Editor/
 
 ## Технические детали
 
-- **Архитектура**: Qt 6 Widgets с OpenCV для обработки изображений
-- **Фильтры**: Реализованы через OpenCV функции
-- **Интерфейс**: Современный дизайн с меню, диалогами и горячими клавишами
-- **Форматы**: Поддержка всех основных форматов изображений
-- **Производительность**: Эффективная обработка изображений с сохранением оригинального изображения
+- Qt Widgets/Gui/Core, никаких внешних зависимостей
+- Ресурсы подключаются через `:/icons/...` из `resources/icons.qrc`
+- `windeployqt` выполняется пост-билдом

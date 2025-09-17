@@ -18,6 +18,7 @@ public:
     void rotate90Clockwise();
     void rotate90CounterClockwise();
     void rotate180();
+    void flipHorizontal();
     void resizeTo(int width, int height, Qt::TransformationMode mode = Qt::SmoothTransformation);
     void cropTo(const QRect &rect);
 
@@ -27,9 +28,12 @@ public:
 
     const QImage &image() const;
     void setImage(const QImage &img);
+    const QString &filePath() const { return m_path; }
+    void setFilePath(const QString &p) { m_path = p; }
 
 private:
     QImage m_image;
+    QString m_path;
 };
 
 #endif // IMAGE_DOCUMENT_H

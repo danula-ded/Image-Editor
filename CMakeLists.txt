@@ -14,15 +14,25 @@ find_package(Qt5 5.15.2 REQUIRED COMPONENTS Widgets Gui Core)
 # Pure Qt5 build (no OpenCV)
 
 # Sources (modular layout)
-add_executable(ImageEditor WIN32
+set(IMAGEEDITOR_SOURCES
     src/main.cpp
     src/ui/mainwindow.cpp
     src/ui/mainwindow.h
     src/ui/brightnesscontrastdialog.cpp
     src/ui/brightnesscontrastdialog.h
+    src/ui/imagewidget.cpp
+    src/ui/imagewidget.h
     src/core/ImageDocument.cpp
     src/core/ImageDocument.h
+    resources/icons.qrc
 )
+
+set(APP_WIN_RC)
+if (WIN32 AND EXISTS "${CMAKE_SOURCE_DIR}/resources/resources.rc" AND EXISTS "${CMAKE_SOURCE_DIR}/resources/app_icon.ico")
+    set(APP_WIN_RC resources/resources.rc)
+endif()
+
+add_executable(ImageEditor WIN32 ${IMAGEEDITOR_SOURCES} ${APP_WIN_RC})
 
 # Link libraries
 target_link_libraries(ImageEditor PRIVATE
